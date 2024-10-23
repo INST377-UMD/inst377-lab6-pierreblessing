@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Map of US</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css" />
+    <style>
+        body {
+            background-color: rgb(40, 97, 188);
+            color: white; 
+            font-family: Arial, sans-serif; 
+        }
+        #map {
+            height: 500px;
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+    <h1>Map of US</h1>
+    <div id="map"></div>
+    <div id="coordinates">
+        <p>Marker 1: Latitude: , Longitude: </p>
+        <p>Locality: </p>
+        <p>Marker 2: Latitude: , Longitude: </p>
+        <p>Locality: </p>
+        <p>Marker 3: Latitude: , Longitude: </p>
+        <p>Locality: </p>
+    </div>
+    <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>
+    <script>
+        // this function will generate random coordinates
+        function getRandomInRange(from, to, fixed) {
+            return (Math.random() * (to - from) + from).toFixed(fixed) * 1;
+        }
+        // this generate 3 sets of random coordinates
+        const coordinates = [
+            { lat: getRandomInRange(30, 35, 3), lon: getRandomInRange(-90, -100, 3) },
+            { lat: getRandomInRange(30, 35, 3), lon: getRandomInRange(-90, -100, 3) },
+            { lat: getRandomInRange(30, 35, 3), lon: getRandomInRange(-90, -100, 3) }
+        ];
+        // this calculates the average coordinates
+        const avgLat = (coordinates[0].lat + coordinates[1].lat + coordinates[2].lat) / 3;
+        const avgLon = (coordinates[0].lon + coordinates[1].lon + coordinates[2].lon) / 3;
+
+        // this will initialize the map at th average coordinates
+        const map = L.map('map').setView([avgLat, avgLon], 6); // Adjust zoom level as needed
+        // this adds OpenStreetMap tiles with its updated attribution
+        L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+        }).addTo(map);
+        // this adds markers and fetch locality information for each coordinate
+        coordinates.forEach((coord, index) => {
+            // Athis will add marker to the map
+            const marker = L.marker([coord.lat, coord.lon]).addTo(map);
+            
+            document.querySelectorAll("#coordinates p")[index * 2].textContent = 
+                `Marker ${index + 1}: Latitude: ${coord.lat}, Longitude: ${coord.lon}`;
+            // this fetches the locality using the reverse geocoding api
+            fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${coord.lat}&longitude=${coord.lon}&localityLanguage=en`)
+                .then(response => response.json())
+                .then(data => {
+                    document.querySelectorAll("#coordinates p")[index * 2 + 1].textContent = 
+                        `Locality: ${data.locality || "Unknown"}`;
+                })
+                .catch(error => {
+                    console.error("Error fetching locality:", error);
+                    document.querySelectorAll("#coordinates p")[index * 2 + 1].textContent = 
+                        `Locality: Error fetching data`;
+                });
+        });
+    </script>
+</body>
+</html>
